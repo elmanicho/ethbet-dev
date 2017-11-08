@@ -1,11 +1,11 @@
 const request = require('supertest');
 const sinon = require('sinon');
 const expect = require('chai').expect;
-const app = require('../../server').app;
-const signService = require('../support/signService');
-const testAddress = require('../support/testAddress.json');
+const app = require('../../../server').app;
+const signService = require('../../support/signService');
+const testAddress = require('../../support/testAddress.json');
 
-const betService = require('../../lib/betService');
+const betService = require('../../../lib/betService');
 
 describe('betsApi', function betsApiTest() {
 

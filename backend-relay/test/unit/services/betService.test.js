@@ -1,11 +1,11 @@
-'use strict';
-
 const expect = require('chai').expect;
 const sinon = require('sinon');
 
-let socketService = require('../../lib/socketService');
+let socketService = require('../../../lib/socketService');
+let betService = require('../../../lib/betService');
+const testAddress = require('../../support/testAddress.json');
 
-let betService = require('../../lib/betService');
+const BetFactory = require('../../factories/bets').BetFactory;
 
 describe('createBet', function () {
   let emitStub;
@@ -19,13 +19,13 @@ describe('createBet', function () {
   });
 
   it('ok', async function it() {
-    let bet = await betService.createBet({amount: 500, edge: 1.5, user: "0x001",seed:"123456abcd123456"});
+    let bet = await betService.createBet({amount: 500, edge: 1.5, user: testAddress.public, seed: "123456abcd123456"});
 
     let myBet = await db.Bet.findById(bet.id);
 
     expect(myBet.amount).to.equal(500);
     expect(myBet.edge).to.equal(1.5);
-    expect(myBet.user).to.equal("0x001");
+    expect(myBet.user).to.equal(testAddress.public);
     expect(myBet.seed).to.equal("123456abcd123456");
 
     expect(emitStub.callCount).to.equal(1);
@@ -42,9 +42,9 @@ describe('getActiveBets', function () {
   let bet_1, bet_2, bet_3;
 
   before(async function beforeTest() {
-    bet_1 = await db.Bet.create({amount: 500, edge: 1.5, user: "0x001"});
-    bet_2 = await db.Bet.create({amount: 500, edge: 1.5, user: "0x002", cancelledAt: new Date()});
-    bet_3 = await db.Bet.create({amount: 500, edge: 1.5, user: "0x003", executedAt: new Date()});
+    bet_1 = await db.Bet.create(BetFactory.build({}));
+    bet_2 = await db.Bet.create(BetFactory.build({cancelledAt: new Date()}));
+    bet_3 = await db.Bet.create(BetFactory.build({executedAt: new Date()}));
   });
 
   it('ok', async function it() {
