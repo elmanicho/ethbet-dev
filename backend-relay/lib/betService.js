@@ -32,6 +32,21 @@ async function getActiveBets() {
   return bets;
 }
 
+async function getExecutedBets() {
+  let bets = await db.Bet.findAll({
+    where: {
+      executedAt: {
+        [db.Sequelize.Op.ne]: null
+      },
+    },
+    order: [
+      ['executedAt', 'DESC']
+    ]
+  });
+
+  return bets;
+}
+
 async function cancelBet(betId, user) {
   let bet = await db.Bet.findById(betId);
 
@@ -114,6 +129,7 @@ async function callBet(betId, callerSeed, callerUser) {
   socketService.emit("betCalled", bet);
 
   return {
+    tx: txResults.tx,
     seedMessage: `We combined the makerSeed (${rollInput.makerSeed}), the callerSeed (${rollInput.callerSeed}) and the server seed (${rollResults.serverSeed}), and the betID (${rollInput.betId}) in order to produce the fullSeed: ${rollResults.fullSeed}`,
     resultMessage: `You rolled a ${Math.round(rollResults.roll * 100) / 100} (needed ${rollUnder}) and ${makerWon ? 'lost' : 'won'} ${bet.amount / 100} EBET!'`
   };
@@ -121,8 +137,9 @@ async function callBet(betId, callerSeed, callerUser) {
 
 
 module.exports = {
-  createBet: createBet,
-  getActiveBets: getActiveBets,
-  cancelBet: cancelBet,
-  callBet: callBet,
+  createBet,
+  getActiveBets,
+  getExecutedBets,
+  cancelBet,
+  callBet,
 };
