@@ -3,14 +3,14 @@ pragma solidity ^0.4.19;
 import './EthbetToken.sol';
 
 // Import newer SafeMath version under new name to avoid conflict with the version included in EthbetToken
-import {SafeMath as SafeMath2} from "./SafeMath.sol";
+//import "./SafeMath.sol";
 
 import './Ownable.sol';
 import './oraclizeAPI_0.4.sol';
 
 
 contract EthbetOraclize is Ownable, usingOraclize {
-  using SafeMath2 for uint256;
+  using SafeMath for uint256;
 
   /*
   * Events
@@ -116,7 +116,7 @@ contract EthbetOraclize is Ownable, usingOraclize {
       // set OAR for testrpc
       OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
     }
-    else{
+    else {
       oraclize_setNetwork(networkID_auto);
     }
 
