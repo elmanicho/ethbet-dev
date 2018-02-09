@@ -25,7 +25,6 @@ contract EthbetOraclize is Ownable, usingOraclize {
   event BetInitialized(uint betId, bytes32 queryId);
   event RelayAddressChanged(address relay);
   event ExecutedBet(uint indexed betId, address winner, address loser, uint amount);
-  event LogOraclizeQueryFailure(string description);
 
   /*
   * Storage
@@ -298,10 +297,7 @@ contract EthbetOraclize is Ownable, usingOraclize {
     require(lockedEthBalances[_caller] >= _amount);
 
     // check gas sent is sufficient for query costs
-    if (oraclize.getPrice("random") > msg.value) {
-      LogOraclizeQueryFailure("Oraclize query was not sent, msg value insufficient to cover price");
-      revert();
-    }
+    require(oraclize.getPrice("random") <= msg.value);
 
     // init bet
     Bet memory bet = Bet(_betId, _maker, _caller, _amount, _rollUnder, "", 0, false, false);
@@ -432,6 +428,16 @@ contract EthbetOraclize is Ownable, usingOraclize {
    */
   function lockedEthBalanceOf(address _userAddress) constant public returns (uint) {
     return lockedEthBalances[_userAddress];
+  }
+
+  /**
+  * @dev Get bet by id
+  */
+  function getBetById(uint betId) constant public
+  returns (address maker, address caller, uint amount, uint rollUnder, bytes rawResultInBytes, uint roll, bool makerWon, bool executed)
+  {
+    Bet memory bet = bets[queryIds[betId]];
+    return (bet.maker, bet.caller, bet.amount, bet.rollUnder, bytes(bet.rawResult), bet.roll, bet.makerWon, bet.executed);
   }
 
 }
