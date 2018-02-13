@@ -1,5 +1,5 @@
-const contractService = require('./contractService');
-const web3Service = require('./web3Service');
+const contractService = require('../contractService');
+const web3Service = require('../web3Service');
 const ethUtil = require('ethereumjs-util');
 
 async function balanceOf(userAddress) {

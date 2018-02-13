@@ -1,11 +1,11 @@
 const expect = require('chai').expect;
 const sinon = require('sinon');
 
-let ethbetService = require('../../../lib/ethbetService');
-const contractService = require('../../../lib/contractService');
-const web3Service = require('../../../lib/web3Service');
+let ethbetService = require('../../../../lib/blockchain/ethbetService');
+const contractService = require('../../../../lib/contractService');
+const web3Service = require('../../../../lib/web3Service');
 
-const testAddress = require('../../support/testAddress.json');
+const testAddress = require('../../../support/testAddress.json');
 
 
 describe('ethbetService', function ethbetServiceTest() {
