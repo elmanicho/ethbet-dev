@@ -61,7 +61,7 @@ export const betCanceled = data => action(BET_CANCELED, data);
 export const CALL_BET = 'ETHER:CALL_BET';
 export const callBet = data => action(CALL_BET, data);
 
-export const POST_CALL_BET = createRequestTypes('POST_CALL_BET');
+export const POST_CALL_BET = createRequestTypes('ETHER:POST_CALL_BET');
 export const postCallBet = {
   request: (data) => action(POST_CALL_BET.REQUEST,data),
   success: (data) => action(POST_CALL_BET.SUCCESS, data),
@@ -70,3 +70,7 @@ export const postCallBet = {
 
 export const BET_CALLED = 'ETHER:BET_CALLED';
 export const betCalled = data => action(BET_CALLED, data);
+
+
+export const BET_EXECUTED = 'ETHER:BET_EXECUTED';
+export const betExecuted = data => action(BET_EXECUTED, data);

@@ -29,7 +29,7 @@ There is a ${loseChance}% chance you will lose ${amount} ETH`);
   }
 
   render() {
-    let { web3Store, betStore, bet } = this.props;
+    let { web3Store, etherBetStore, bet } = this.props;
 
     let userDisplay = bet.username || _.truncate(bet.user, { 'length': 15 });
 
@@ -43,19 +43,19 @@ There is a ${loseChance}% chance you will lose ${amount} ETH`);
             {bet.user === web3Store.get("web3").eth.defaultAccount ?
               <button type="button" className="btn btn-danger"
                       onClick={() => this.cancelBet(bet.id)}
-                      disabled={betStore.get("cancelingBet") || betStore.get("callingBet")}>
+                      disabled={etherBetStore.get("cancelingBet") || etherBetStore.get("callingBet")}>
                 Cancel
               </button> :
               <button type="button" className="btn btn-info"
                       onClick={() => this.callBet(bet.id)}
-                      disabled={betStore.get("cancelingBet") || betStore.get("callingBet")}>
+                      disabled={etherBetStore.get("cancelingBet") || etherBetStore.get("callingBet")}>
                 Call
               </button>
             }
           </div>
 
           <Loader color="white"
-                  loaded={betStore.get("callingBet") !== bet.id && betStore.get("cancelingBet") !== bet.id}/>
+                  loaded={etherBetStore.get("callingBet") !== bet.id && etherBetStore.get("cancelingBet") !== bet.id}/>
         </div>
       </div>
     );
@@ -64,7 +64,7 @@ There is a ${loseChance}% chance you will lose ${amount} ETH`);
 
 const mapStateToProps = (state) => {
   return {
-    betStore: state.betStore,
+    etherBetStore: state.etherBetStore,
     web3Store: state.web3Store,
   };
 };

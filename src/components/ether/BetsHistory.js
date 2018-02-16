@@ -13,7 +13,7 @@ import ExecutedBet from "./ExecutedBet";
 class BetsHistory extends Component {
 
   render() {
-    let {betStore} = this.props;
+    let {etherBetStore} = this.props;
 
     return (
       <div className="col-lg-12">
@@ -21,12 +21,12 @@ class BetsHistory extends Component {
           <legend>Executed Bets</legend>
 
           <div className="row">
-            {betStore.get("executedBets").map((bet) => (
+            {etherBetStore.get("executedBets").map((bet) => (
               <ExecutedBet bet={bet} key={bet.id}/>
             ))}
           </div>
 
-          <Loader color="white" loaded={!betStore.get("gettingExecutedBets")}/>
+          <Loader color="white" loaded={!etherBetStore.get("gettingExecutedBets")}/>
         </div>
       </div>
     );
@@ -36,7 +36,7 @@ class BetsHistory extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    betStore: state.betStore,
+    etherBetStore: state.etherBetStore,
   };
 };
 

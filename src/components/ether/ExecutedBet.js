@@ -33,7 +33,7 @@ class ExecutedBet extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    betStore: state.betStore,
+    etherBetStore: state.etherBetStore,
     web3Store: state.web3Store,
   };
 };

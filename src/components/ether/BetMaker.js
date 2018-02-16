@@ -17,7 +17,7 @@ class BetMaker extends Component {
   }
 
   updateInputValue(e, field) {
-    let newBet = Object.assign({}, this.props.betStore.get("newBet"));
+    let newBet = Object.assign({}, this.props.etherBetStore.get("newBet"));
 
     newBet[field] = e.target.value;
 
@@ -25,7 +25,7 @@ class BetMaker extends Component {
   }
 
   roundInputValue(e, field) {
-    let newBet = Object.assign({}, this.props.betStore.get("newBet"));
+    let newBet = Object.assign({}, this.props.etherBetStore.get("newBet"));
 
     newBet[field] = _.round(e.target.value, 2);
 
@@ -33,8 +33,8 @@ class BetMaker extends Component {
   }
 
   isValidNewBet() {
-    let newBetAmount = parseFloat(this.props.betStore.get("newBet").amount);
-    let newBetEdge = parseFloat(this.props.betStore.get("newBet").edge);
+    let newBetAmount = parseFloat(this.props.etherBetStore.get("newBet").amount);
+    let newBetEdge = parseFloat(this.props.etherBetStore.get("newBet").edge);
     return newBetAmount > 0 &&
       newBetEdge >= -99 && newBetEdge <= 99;
   }
@@ -44,7 +44,7 @@ class BetMaker extends Component {
   }
 
   render() {
-    let { betStore } = this.props;
+    let { etherBetStore } = this.props;
 
     return (
       <div className="col-lg-5">
@@ -54,7 +54,7 @@ class BetMaker extends Component {
             <div className="row">
               <div className="col-lg-8 col-lg-offset-2 bet-row input-group">
                 <input name="amount" type="text" className="form-control"
-                       value={betStore.get("newBet").amount}
+                       value={etherBetStore.get("newBet").amount}
                        onChange={(e) => this.updateInputValue(e, 'amount')}
                        onBlur={(e) => this.roundInputValue(e, 'amount')}
                        placeholder="Number of tokens"/>
@@ -65,7 +65,7 @@ class BetMaker extends Component {
             <div className="row">
               <div className="col-lg-8 col-lg-offset-2 bet-row input-group">
                 <input name="edge" type="text" className="form-control"
-                       value={betStore.get("newBet").edge}
+                       value={etherBetStore.get("newBet").edge}
                        onChange={(e) => this.updateInputValue(e, 'edge')}
                        onBlur={(e) => this.roundInputValue(e, 'edge')}
 
@@ -78,12 +78,12 @@ class BetMaker extends Component {
               <div className="col-lg-4 col-lg-offset-4">
                 <button type="button" className="btn btn-info"
                         onClick={this.saveNewBet.bind(this)}
-                        disabled={!this.isValidNewBet() || betStore.get("savingNewBet")}>
+                        disabled={!this.isValidNewBet() || etherBetStore.get("savingNewBet")}>
                   Offer Bet
                 </button>
               </div>
             </div>
-            <Loader color="white" loaded={!betStore.get("savingNewBet")}/>
+            <Loader color="white" loaded={!etherBetStore.get("savingNewBet")}/>
 
           </form>
         </div>
@@ -96,7 +96,7 @@ class BetMaker extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    betStore: state.betStore,
+    etherBetStore: state.etherBetStore,
   };
 };
 

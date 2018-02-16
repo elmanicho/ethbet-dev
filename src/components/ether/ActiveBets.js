@@ -17,8 +17,8 @@ import ActiveBet from "./ActiveBet";
 class ActiveBets extends Component {
 
   getActiveBets() {
-    let opts = this.props.betStore.get("activeBetsLoadOpts");
-    return _.orderBy(_.uniqBy(this.props.betStore.get("activeBets"), 'id'), [opts.orderField], [opts.orderDirection.toLowerCase()]);
+    let opts = this.props.etherBetStore.get("activeBetsLoadOpts");
+    return _.orderBy(_.uniqBy(this.props.etherBetStore.get("activeBets"), 'id'), [opts.orderField], [opts.orderDirection.toLowerCase()]);
   }
 
   setActiveBetsLoadOpts(e, opts) {
@@ -29,7 +29,7 @@ class ActiveBets extends Component {
   }
 
   loadMore(bets) {
-    let activeBetsLoadOpts = this.props.betStore.get("activeBetsLoadOpts");
+    let activeBetsLoadOpts = this.props.etherBetStore.get("activeBetsLoadOpts");
     activeBetsLoadOpts.offset = bets.length;
     this.props.etherBetActions.setActiveBetsLoadOpts({activeBetsLoadOpts});
     this.props.etherBetActions.getActiveBets();
@@ -40,10 +40,10 @@ class ActiveBets extends Component {
   }
 
   render() {
-    let {betStore} = this.props;
+    let {etherBetStore} = this.props;
 
     let activeBets = this.getActiveBets();
-    let activeBetsTotalCount = this.props.betStore.get("activeBetsTotalCount");
+    let activeBetsTotalCount = this.props.etherBetStore.get("activeBetsTotalCount");
 
     return (
       <div className="col-lg-12">
@@ -106,7 +106,7 @@ class ActiveBets extends Component {
           <div className="row">
             {this.showLoadMore(activeBets, activeBetsTotalCount) ?
               <button type="button" className="btn btn-primary"
-                      disabled={betStore.get("gettingActiveBets")}
+                      disabled={etherBetStore.get("gettingActiveBets")}
                       onClick={() => this.loadMore(activeBets)}>
                 Load More
               </button>
@@ -114,7 +114,7 @@ class ActiveBets extends Component {
             }
           </div>
 
-          <Loader color="white" loaded={!betStore.get("gettingActiveBets")}/>
+          <Loader color="white" loaded={!etherBetStore.get("gettingActiveBets")}/>
         </div>
       </div>
     );
@@ -124,7 +124,7 @@ class ActiveBets extends Component {
 
 const mapStateToProps = (state) => {
   return {
-    betStore: state.betStore,
+    etherBetStore: state.etherBetStore,
   };
 };
 
