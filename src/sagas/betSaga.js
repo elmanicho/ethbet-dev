@@ -128,7 +128,7 @@ function* callBet(data) {
   try {
     const web3 = yield select(state => state.web3Store.get("web3"));
 
-    const results = yield call(betService.callBet, web3, data.id);
+    const results = yield call(betService.callBet, web3, data.id, data.amount);
 
     // delay to allow changes to be committed to local node
     yield delay(1000);
