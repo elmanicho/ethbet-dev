@@ -184,6 +184,13 @@ async function callBet(betId, callerSeed, callerUser) {
   let rollUnder = 50 + bet.edge / 2;
   let makerWon = (rollResults.roll <= rollUnder);
 
+  logService.logger.info("Bet Called and roll calculated : ", {
+    rollInput: rollInput,
+    rollResults: rollResults,
+    rollUnder,
+    makerWon
+  });
+
   let txResults;
   try {
     txResults = await ethbetService.executeBet(bet.user, callerUser, makerWon, bet.amount);
