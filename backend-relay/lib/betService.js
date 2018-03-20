@@ -4,6 +4,7 @@ let socketService = require('./socketService');
 let ethbetService = require('./blockchain/ethbetService');
 let userService = require('./userService');
 let diceService = require('./diceService');
+let fairnessProofService = require('./fairnessProofService');
 let lockService = require('./lockService');
 let logService = require('./logService');
 
@@ -68,6 +69,19 @@ async function getExecutedBets() {
   let populatedBets = await userService.populateUserNames(bets);
 
   return populatedBets;
+}
+
+async function getBetInfo(betId) {
+  let bet = await db.Bet.findById(betId);
+
+  // check if bet executed
+  if(bet.serverSeedHash){
+    let serverSeed = await fairnessProofService.getSeedByHash(bet.serverSeedHash);
+    bet.dataValues.serverSeed = serverSeed;
+  }
+
+  let populatedBets = await userService.populateUserNames([bet]);
+  return populatedBets[0];
 }
 
 
@@ -218,5 +232,6 @@ module.exports = {
   getActiveBets,
   getExecutedBets,
   cancelBet,
-  callBet
+  callBet,
+  getBetInfo
 };

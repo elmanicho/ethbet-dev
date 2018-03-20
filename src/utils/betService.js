@@ -34,7 +34,7 @@ async function cancelBet(web3, betId) {
   return await client.post(`${apiRoot}/bets/cancel`, message);
 }
 
-async function callBet(web3, betId , betAmount) {
+async function callBet(web3, betId, betAmount) {
   let callBetData = {
     id: betId,
     seed: randomService.generateSeed()
@@ -54,7 +54,7 @@ async function callBet(web3, betId , betAmount) {
 
 
 async function getActiveBets(opts) {
-  let response = await client.get(apiRoot + '/bets/active', {params: opts});
+  let response = await client.get(apiRoot + '/bets/active', { params: opts });
 
   return response.data.results;
 }
@@ -65,12 +65,19 @@ async function getExecutedBets() {
   return response.data.bets;
 }
 
+async function getBetInfo(betId) {
+  let response = await client.get(apiRoot + '/bets/' + betId);
+
+  return response.data;
+}
+
 let betService = {
   makeBet,
   cancelBet,
   callBet,
   getActiveBets,
   getExecutedBets,
+  getBetInfo,
 };
 
 export default betService;

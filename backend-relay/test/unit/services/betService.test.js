@@ -7,6 +7,7 @@ let betService = require('../../../lib/betService');
 let ethbetService = require('../../../lib/blockchain/ethbetService');
 let userService = require('../../../lib/userService');
 let diceService = require('../../../lib/diceService');
+let fairnessProofService = require('../../../lib/fairnessProofService');
 const testAddress = require('../../support/testAddress.json');
 
 const BetFactory = require('../../factories/bets').BetFactory;
@@ -23,7 +24,7 @@ describe('betService', function betServiceTest() {
     };
 
     context('sufficient balance', function context() {
-      let results = {stub: 'results'};
+      let results = { stub: 'results' };
 
       before(function beforeTest() {
         emitStub = sinon.stub(socketService, "emit");
@@ -111,8 +112,8 @@ describe('betService', function betServiceTest() {
 
     before(async function beforeTest() {
       bet_1 = await db.Bet.create(BetFactory.build({}));
-      bet_2 = await db.Bet.create(BetFactory.build({cancelledAt: new Date()}));
-      bet_3 = await db.Bet.create(BetFactory.build({executedAt: new Date()}));
+      bet_2 = await db.Bet.create(BetFactory.build({ cancelledAt: new Date() }));
+      bet_3 = await db.Bet.create(BetFactory.build({ executedAt: new Date() }));
     });
 
     it('ok', async function it() {
@@ -137,7 +138,7 @@ describe('betService', function betServiceTest() {
 
     before(async function beforeTest() {
       bet_1 = await db.Bet.create(BetFactory.build({}));
-      bet_2 = await db.Bet.create(BetFactory.build({cancelledAt: new Date()}));
+      bet_2 = await db.Bet.create(BetFactory.build({ cancelledAt: new Date() }));
       bet_3 = await db.Bet.create(BetFactory.build({
         user: userAddress_1,
         callerUser: userAddress_2,
@@ -178,6 +179,60 @@ describe('betService', function betServiceTest() {
     });
 
     after(function afterTest() {
+      getUsernamesStub.restore();
+    });
+  });
+
+
+  describe('getBetInfo', function () {
+    let getUsernamesStub, getSeedByHashStub;
+    let userAddress_1 = "0x04bd37D5393cD877f64ad36f1791ED09d847b981";
+    let userAddress_2 = "0x04bd37D5393cD877f64ad36f1791ED09d847b982";
+    let serverSeedHash = "174d12efa75cca9fd2d89b69fc73f3f5691b13a3c1fe45683b59d76cad105c2a9ed9452648b346b4d9aea9a1d09805fd3919321badf9a28e3ee7c2ccac367660";
+    let seed = "521e871926b78847";
+
+    let username_1 = "Mike";
+    let username_2 = "John";
+    let bet_1;
+
+    before(async function beforeTest() {
+      bet_1 = await db.Bet.create(BetFactory.build({
+        user: userAddress_1,
+        callerUser: userAddress_2,
+        executedAt: new Date(),
+        serverSeedHash: serverSeedHash
+      }));
+
+      getSeedByHashStub = sinon.stub(fairnessProofService, "getSeedByHash");
+      getSeedByHashStub.callsFake(function (myServerSeedHash) {
+        expect(myServerSeedHash).to.eq(serverSeedHash);
+
+        return seed;
+      });
+
+      getUsernamesStub = sinon.stub(userService, "getUsernames");
+      getUsernamesStub.callsFake(function (userAddresses) {
+        expect(_.clone(userAddresses).sort()).to.deep.eq([userAddress_1, userAddress_2]);
+
+        return {
+          [userAddress_1]: username_1,
+          [userAddress_2]: username_2,
+        }
+      });
+    });
+
+    it('ok', async function it() {
+      let bet = await betService.getBetInfo(bet_1.id);
+
+      let betJSON = bet.toJSON();
+      expect(betJSON.id).to.equal(bet_1.id);
+      expect(betJSON.serverSeed).to.equal(seed);
+      expect(betJSON.username).to.equal(username_1);
+      expect(betJSON.callerUsername).to.equal(username_2);
+    });
+
+    after(function afterTest() {
+      getSeedByHashStub.restore();
       getUsernamesStub.restore();
     });
   });
@@ -268,7 +323,7 @@ describe('betService', function betServiceTest() {
         emitStub = sinon.stub(socketService, "emit");
         unlockBalanceStub = sinon.stub(ethbetService, "unlockBalance");
 
-        bet = await db.Bet.create(Object.assign({}, betData, {cancelledAt: new Date()}));
+        bet = await db.Bet.create(Object.assign({}, betData, { cancelledAt: new Date() }));
       });
 
       it('fails', async function it() {
@@ -299,7 +354,7 @@ describe('betService', function betServiceTest() {
         emitStub = sinon.stub(socketService, "emit");
         unlockBalanceStub = sinon.stub(ethbetService, "unlockBalance");
 
-        bet = await db.Bet.create(Object.assign({}, betData, {executedAt: new Date()}));
+        bet = await db.Bet.create(Object.assign({}, betData, { executedAt: new Date() }));
       });
 
       it('fails', async function it() {
@@ -330,7 +385,7 @@ describe('betService', function betServiceTest() {
         emitStub = sinon.stub(socketService, "emit");
         unlockBalanceStub = sinon.stub(ethbetService, "unlockBalance");
 
-        bet = await db.Bet.create(Object.assign({}, betData, {user: "0x12f7c4c8977a5b9addb52b83e23c9d0f3b89be16"}));
+        bet = await db.Bet.create(Object.assign({}, betData, { user: "0x12f7c4c8977a5b9addb52b83e23c9d0f3b89be16" }));
       });
 
       it('fails', async function it() {
@@ -357,7 +412,7 @@ describe('betService', function betServiceTest() {
     });
 
     context('sufficient locked balance', function context() {
-      let results = {stub: 'results'};
+      let results = { stub: 'results' };
 
       before(async function beforeTest() {
         emitStub = sinon.stub(socketService, "emit");
@@ -451,7 +506,7 @@ describe('betService', function betServiceTest() {
         emitStub = sinon.stub(socketService, "emit");
         executeBetStub = sinon.stub(ethbetService, "executeBet");
 
-        bet = await db.Bet.create(Object.assign({}, betData, {cancelledAt: new Date()}));
+        bet = await db.Bet.create(Object.assign({}, betData, { cancelledAt: new Date() }));
       });
 
       it('fails', async function it() {
@@ -483,7 +538,7 @@ describe('betService', function betServiceTest() {
         emitStub = sinon.stub(socketService, "emit");
         executeBetStub = sinon.stub(ethbetService, "executeBet");
 
-        bet = await db.Bet.create(Object.assign({}, betData, {executedAt: new Date(2017, 3, 4)}));
+        bet = await db.Bet.create(Object.assign({}, betData, { executedAt: new Date(2017, 3, 4) }));
       });
 
       it('fails', async function it() {
@@ -627,7 +682,7 @@ describe('betService', function betServiceTest() {
     });
 
     context('conditions ok', function context() {
-      let txResults = {tx: '9651asdcxvfads'};
+      let txResults = { tx: '9651asdcxvfads' };
 
       before(function beforeTest() {
         balanceOfStub = sinon.stub(ethbetService, "balanceOf");
