@@ -412,7 +412,7 @@ describe('betService', function betServiceTest() {
     });
 
     context('sufficient locked balance', function context() {
-      let results = { stub: 'results' };
+      let results = { tx: '12asd45dfa' };
 
       before(async function beforeTest() {
         emitStub = sinon.stub(socketService, "emit");
@@ -444,6 +444,8 @@ describe('betService', function betServiceTest() {
 
         let updatedBet = await db.Bet.findById(bet.id);
         expect(!!updatedBet.cancelledAt).to.equal(true);
+        expect(updatedBet.txHash).to.equal(results.tx);
+        expect(updatedBet.txSuccess).to.equal(true);
 
         expect(emitStub.callCount).to.equal(1);
         expect(unlockBalanceStub.callCount).to.equal(1);
@@ -754,6 +756,8 @@ describe('betService', function betServiceTest() {
           expect(updatedBet.serverSeedHash).to.equal(rollResults.serverSeedHash);
           expect(updatedBet.roll).to.equal(rollResults.roll);
           expect(updatedBet.makerWon).to.equal(true);
+          expect(updatedBet.txHash).to.equal(txResults.tx);
+          expect(updatedBet.txSuccess).to.equal(true);
 
           expect(emitStub.callCount).to.equal(1);
           expect(executeBetStub.callCount).to.equal(1);
@@ -820,6 +824,8 @@ describe('betService', function betServiceTest() {
           expect(updatedBet.serverSeedHash).to.equal(rollResults.serverSeedHash);
           expect(updatedBet.roll).to.equal(rollResults.roll);
           expect(updatedBet.makerWon).to.equal(false);
+          expect(updatedBet.txHash).to.equal(txResults.tx);
+          expect(updatedBet.txSuccess).to.equal(true);
 
           expect(emitStub.callCount).to.equal(1);
           expect(executeBetStub.callCount).to.equal(1);

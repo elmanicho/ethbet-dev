@@ -46,7 +46,7 @@ const PORT = process.env.PORT || 9000;
 
 //Starting the server ------------------------------------/
 
-server.setTimeout(15 * 60 * 1000); // increase timeout to 15 minutes to avoid slow blockchain issues
+server.setTimeout(5 * 60 * 1000); // increase timeout to 5 minutes to avoid slow blockchain issues
 
 server.listen(PORT, function (err) {
   if (err) {
