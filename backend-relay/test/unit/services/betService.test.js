@@ -461,7 +461,7 @@ describe('betService', function betServiceTest() {
 
 
   describe('callBet', function () {
-    let emitStub, balanceOfStub, lockedBalanceOfStub, executeBetStub, calculateRollStub;
+    let emitStub, balanceOfStub, lockedBalanceOfStub,lockBalanceStub, executeBetStub, calculateRollStub;
     let callerUser = "0x05ad37D5393cD877f64ad36f1791ED09d847b123";
     let callerSeed = "callerAbcde12345";
     let betData = {
@@ -685,6 +685,7 @@ describe('betService', function betServiceTest() {
 
     context('conditions ok', function context() {
       let txResults = { tx: '9651asdcxvfads' };
+      let lockTxResults = { tx: '12sadfr12rt' };
 
       before(function beforeTest() {
         balanceOfStub = sinon.stub(ethbetService, "balanceOf");
@@ -730,6 +731,14 @@ describe('betService', function betServiceTest() {
             expect(data.id).to.eq(bet.id);
           });
 
+          lockBalanceStub = sinon.stub(ethbetService, "lockBalance");
+          lockBalanceStub.callsFake(function (caller, amount) {
+            expect(caller).to.eq(callerUser);
+            expect(amount).to.eq(betData.amount);
+
+            return Promise.resolve(lockTxResults);
+          });
+
           executeBetStub = sinon.stub(ethbetService, "executeBet");
           executeBetStub.callsFake(function (maker, caller, makerWon, amount) {
             expect(maker).to.eq(testAddress.public);
@@ -765,6 +774,7 @@ describe('betService', function betServiceTest() {
 
         after(function afterTest() {
           emitStub.restore();
+          lockBalanceStub.restore();
           executeBetStub.restore();
           calculateRollStub.restore();
         });
@@ -796,6 +806,14 @@ describe('betService', function betServiceTest() {
           emitStub.callsFake(function (event, data) {
             expect(event).to.eq("betCalled");
             expect(data.id).to.eq(bet.id);
+          });
+
+          lockBalanceStub = sinon.stub(ethbetService, "lockBalance");
+          lockBalanceStub.callsFake(function (caller, amount) {
+            expect(caller).to.eq(callerUser);
+            expect(amount).to.eq(betData.amount);
+
+            return Promise.resolve(lockTxResults);
           });
 
           executeBetStub = sinon.stub(ethbetService, "executeBet");
@@ -833,6 +851,7 @@ describe('betService', function betServiceTest() {
 
         after(function afterTest() {
           emitStub.restore();
+          lockBalanceStub.restore();
           executeBetStub.restore();
           calculateRollStub.restore();
         });

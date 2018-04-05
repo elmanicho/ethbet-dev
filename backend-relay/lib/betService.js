@@ -176,6 +176,21 @@ async function callBet(betId, callerSeed, callerUser) {
     }
   }
 
+  logService.logger.info("callBet, locking caller's balance :", {
+    betId: bet.id,
+    callerUser: callerUser,
+    amount: bet.amount
+  });
+
+  let lockResults = await ethbetService.lockBalance(callerUser, bet.amount);
+
+  logService.logger.info("callBet, locked caller's balance :", {
+    tx: lockResults.tx,
+    betId: bet.id,
+    callerUser: callerUser,
+    amount: bet.amount
+  });
+
   let rollInput = {
     makerSeed: bet.seed,
     callerSeed: callerSeed,
