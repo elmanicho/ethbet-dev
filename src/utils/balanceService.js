@@ -27,7 +27,7 @@ async function deposit(web3, amount) {
 
   // avoid metamask issue wrong order of transactions
   const wait = ms => new Promise(res => setTimeout(res, ms));
-  await wait(3000);
+  await wait(2000);
 
   let results = await ethbetInstance.deposit(amount, { from: web3.eth.defaultAccount, gas: 100000 });
 
