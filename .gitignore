@@ -67,3 +67,5 @@ truffle-scripts/oraclize-create*
 frontend/src/contracts
 
 frontend/build
+
+old_build/
