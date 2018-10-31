@@ -24,20 +24,11 @@ function* saveNewBet(data) {
     const web3 = yield select(state => state.web3Store.get("web3"));
     const newBet = yield select(state => state.etherBetStore.get("newBet"));
 
-    const results = yield call(etherBetService.makeBet, web3, newBet);
+    yield call(etherBetService.makeBet, web3, newBet);
 
-    // delay to allow changes to be committed to local node
-    yield delay(1000);
+    yield put(etherBetActions.postSaveNewBet.success({}));
 
-    yield put(etherBetActions.postSaveNewBet.success({results}));
-
-    console.log("saveNewBet TX", results.tx);
-    yield put(notificationActions.success({
-      notification: {
-        title: 'new bet saved successfully',
-        position: 'br'
-      }
-    }));
+    yield put(notificationActions.successMessage('bet creation ongoing, you will be notified when it is complete ...'));
   } catch (error) {
     yield put(etherBetActions.postSaveNewBet.failure({error}));
     yield put(notificationActions.error({
@@ -48,6 +39,17 @@ function* saveNewBet(data) {
         position: 'br'
       }
     }));
+  }
+}
+
+function* notifyBetCreated(data) {
+  const web3 = yield select(state => state.web3Store.get("web3"));
+  const bet = data.bet;
+
+  // notify if creator
+  if (_.get(web3, 'eth.defaultAccount') === bet.user) {
+    console.log("betCreated ID:", bet.id);
+    yield put(notificationActions.successMessage(`new bet created. ID: ${bet.id}, Amount: ${bet.amount}, Edge: ${bet.edge}`));
   }
 }
 
@@ -217,6 +219,11 @@ function* watchSaveNewBet() {
   yield takeEvery(etherBetActions.SAVE_NEW_BET, saveNewBet);
 }
 
+function* watchBetCreated() {
+  yield takeEvery(etherBetActions.BET_CREATED, notifyBetCreated);
+  yield takeEvery(etherBetActions.BET_CREATED, getUserActiveBetsCount);
+}
+
 function* watchGetActiveBets() {
   yield takeEvery(etherBetActions.GET_ACTIVE_BETS, getActiveBets);
 }
@@ -254,6 +261,7 @@ export default function* betSaga() {
   yield all([
     watchEtherLoadInitialData(),
     watchSaveNewBet(),
+    watchBetCreated(),
     watchGetActiveBets(),
     watchGetUserActiveBetsCount(),
     watchGetExecutedBets(),

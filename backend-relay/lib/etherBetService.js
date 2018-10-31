@@ -11,34 +11,40 @@ let EBET_FEE = 200;
 
 async function createBet(etherBetData) {
   let userEtherBalance = await ethbetOraclizeService.ethBalanceOf(etherBetData.user);
-
   if (userEtherBalance < etherBetData.amount) {
     throw new Error("Insufficient ETH Balance for bet");
   }
 
   let userEbetBalance = await ethbetOraclizeService.balanceOf(etherBetData.user);
-
   if (userEbetBalance < EBET_FEE) {
     throw new Error("Insufficient EBET Balance for bet");
   }
 
-  let etherBet = await db.EtherBet.create(etherBetData);
-
-  logService.logger.info("New Ether Bet, db updated: ", etherBet.toJSON());
-
-  let results = await ethbetOraclizeService.chargeFeeAndLockEthBalance(etherBet.user, etherBet.amount);
-
-  logService.logger.info("New Ether Bet, fee charged & balance locked : ", {
-    tx: results.tx,
-    etherBetId: etherBet.id,
-    user: etherBet.user,
-    amount: etherBet.amount
+  logService.logger.info("createBet: locking balance", {
+    user: etherBetData.user,
+    amount: etherBetData.amount,
   });
 
-  etherBet.dataValues.username = await userService.getUsername(etherBet.user);
-  socketService.emit("etherBetCreated", etherBet);
+  ethbetOraclizeService.chargeFeeAndLockEthBalance(etherBetData.user, etherBetData.amount).then(async (results) => {
+    logService.logger.info("createBet: balance locked", {
+      tx: results.tx,
+      user: etherBetData.user,
+      amount: etherBetData.amount,
+    });
 
-  return etherBet;
+    let etherBet = await db.EtherBet.create(etherBetData);
+
+    logService.logger.info("createBet: db updated", etherBet.toJSON());
+
+    etherBet.dataValues.username = await userService.getUsername(etherBet.user);
+    socketService.emit("etherBetCreated", etherBet);
+  }).catch((err) => {
+    logService.logger.info("createBet: error", {
+      user: etherBetData.user,
+      amount: etherBetData.amount,
+      err: err.message,
+    });
+  });
 }
 
 async function getActiveBets(opts = { orderField: 'createdAt', orderDirection: 'DESC', offset: 0 }) {

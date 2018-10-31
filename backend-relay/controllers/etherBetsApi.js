@@ -69,9 +69,9 @@ module.exports = {
         user: req.body.address,
       };
 
-      let bet = await etherBetService.createBet(betData);
+      await etherBetService.createBet(betData);
 
-      res.status(200).json({ bet });
+      res.status(200).json({  });
     }
     catch (err) {
       res.status(500).json({ message: errorService.sanitize(err).message });

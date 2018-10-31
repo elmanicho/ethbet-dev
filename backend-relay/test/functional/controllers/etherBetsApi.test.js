@@ -165,7 +165,6 @@ describe('etherBetsApi', function etherBetsApiTest() {
 
   describe('createBet', function createBetTest() {
     let createBetStub;
-    let etherBet = {stub: "etherBet"};
     let etherBetData = {
       amount: 100,
       edge: 1,
@@ -181,7 +180,7 @@ describe('etherBetsApi', function etherBetsApiTest() {
           user: testAddress.public
         });
 
-        return Promise.resolve(etherBet);
+        return Promise.resolve();
       });
 
       message = signService.buildMessage(etherBetData, testAddress);
@@ -197,7 +196,7 @@ describe('etherBetsApi', function etherBetsApiTest() {
             return done(error);
           }
 
-          expect(result.body.bet).to.deep.eq(etherBet);
+          expect(result.body).to.deep.eq({});
           done();
         });
     });

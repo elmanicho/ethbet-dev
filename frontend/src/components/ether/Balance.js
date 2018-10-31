@@ -82,29 +82,24 @@ class Balance extends Component {
         <div className="well">
           <div className="row">
             <div className="col-lg-6">
-              <h5>EBET</h5>
-              <legend>Balance: {etherBalanceStore.get("balance") / 100} EBET</legend>
-              <div>Wallet Balance: {etherBalanceStore.get("walletBalance") / 100} EBET</div>
+              <legend>EBET</legend>
             </div>
 
             <div className="col-lg-6">
-              <h5>ETH</h5>
-              <legend>Balance: {_.round(etherBalanceStore.get("ethBalance"), 4)} ETH</legend>
-              <div>Locked Balance: {_.round(etherBalanceStore.get("lockedEthBalance"), 4)} ETH</div>
-              <div>Wallet Balance: {_.round(etherBalanceStore.get("walletEthBalance"), 4)} ETH</div>
+              <legend>ETH</legend>
             </div>
           </div>
 
           <div className="row">
             <div className="col-lg-6">
               <div className="row">
-                <div className="col-lg-7">
+                <div className="col-lg-6">
                   <input name="deposit" type="text"
                          value={etherBalanceStore.get("newDepositValue")}
                          onChange={(e) => this.updateNewDepositValue(e)}
                          className="form-control" placeholder="Deposit EBET"/>
                 </div>
-                <div className="col-lg-4">
+                <div className="col-lg-6">
                   <button type="button" className="btn btn-info" onClick={this.saveNewDeposit.bind(this)}
                           disabled={!this.isValidNewDeposit() || etherBalanceStore.get("savingNewDeposit")}>
                     Deposit
@@ -121,13 +116,13 @@ class Balance extends Component {
               <hr/>
 
               <div className="row">
-                <div className="col-lg-7">
+                <div className="col-lg-6">
                   <input name="withdrawal" type="text"
                          value={etherBalanceStore.get("newWithdrawalValue")}
                          onChange={(e) => this.updateNewWithdrawalValue(e)}
                          className="form-control" placeholder="Withdraw EBET"/>
                 </div>
-                <div className="col-lg-4">
+                <div className="col-lg-6">
                   <button type="button" className="btn btn-info" onClick={this.saveNewWithdrawal.bind(this)}
                           disabled={!this.isValidNewWithdrawal() || etherBalanceStore.get("savingNewWithdrawal")}>
                     Withdraw
@@ -139,13 +134,13 @@ class Balance extends Component {
 
             <div className="col-lg-6">
               <div className="row">
-                <div className="col-lg-7">
+                <div className="col-lg-6">
                   <input name="ethDeposit" type="text"
                          value={etherBalanceStore.get("newEthDepositValue")}
                          onChange={(e) => this.updateNewEthDepositValue(e)}
                          className="form-control" placeholder="Deposit ETH"/>
                 </div>
-                <div className="col-lg-4">
+                <div className="col-lg-6">
                   <button type="button" className="btn btn-info" onClick={this.saveNewEthDeposit.bind(this)}
                           disabled={!this.isValidNewEthDeposit() || etherBalanceStore.get("savingNewEthDeposit")}>
                     Deposit
@@ -162,13 +157,13 @@ class Balance extends Component {
               <hr/>
 
               <div className="row">
-                <div className="col-lg-7">
+                <div className="col-lg-6">
                   <input name="ethWithdrawal" type="text"
                          value={etherBalanceStore.get("newEthWithdrawalValue")}
                          onChange={(e) => this.updateNewEthWithdrawalValue(e)}
                          className="form-control" placeholder="Withdraw ETH"/>
                 </div>
-                <div className="col-lg-4">
+                <div className="col-lg-6">
                   <button type="button" className="btn btn-info" onClick={this.saveNewEthWithdrawal.bind(this)}
                           disabled={!this.isValidNewEthWithdrawal() || etherBalanceStore.get("savingNewEthWithdrawal")}>
                     Withdraw
@@ -178,6 +173,9 @@ class Balance extends Component {
               <Loader color="white" loaded={!etherBalanceStore.get("savingNewEthWithdrawal")}/>
             </div>
           </div>
+
+          <br/>
+          <br/>
 
         </div>
       </div>
