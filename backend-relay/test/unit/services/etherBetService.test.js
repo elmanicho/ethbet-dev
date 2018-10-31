@@ -558,12 +558,6 @@ describe('etherBetService', function etherBetServiceTest() {
       let results = { stub: 'results' };
 
       before(async function beforeTest() {
-        emitStub = sinon.stub(socketService, "emit");
-        emitStub.callsFake(function (event, data) {
-          expect(event).to.eq("etherBetCanceled");
-          expect(data.amount).to.eq(etherBetData.amount);
-        });
-
         lockedEthBalanceOfStub = sinon.stub(ethbetOraclizeService, "lockedEthBalanceOf");
         lockedEthBalanceOfStub.callsFake(function (userAddress) {
           expect(userAddress).to.eq(testAddress.public);
@@ -582,14 +576,24 @@ describe('etherBetService', function etherBetServiceTest() {
         etherBet = await db.EtherBet.create(etherBetData);
       });
 
-      it('ok', async function it() {
-        await etherBetService.cancelBet(etherBet.id, testAddress.public);
+      it('ok', function it(done) {
+        // check results in the socket callback
+        emitStub = sinon.stub(socketService, "emit");
+        emitStub.callsFake(function (event, data) {
+          expect(event).to.equal("etherBetCanceled");
+          let etherBet = data;
 
-        let updatedBet = await db.EtherBet.findById(etherBet.id);
-        expect(!!updatedBet.cancelledAt).to.equal(true);
+          db.EtherBet.findById(etherBet.id).then((updatedBet) => {
+            expect(!!updatedBet.cancelledAt).to.equal(true);
 
-        expect(emitStub.callCount).to.equal(1);
-        expect(unlockEthBalanceStub.callCount).to.equal(1);
+
+            expect(emitStub.callCount).to.equal(1);
+            expect(unlockEthBalanceStub.callCount).to.equal(1);
+            done();
+          }).catch(done);
+        });
+
+        etherBetService.cancelBet(etherBet.id, testAddress.public);
       });
 
       after(function afterTest() {

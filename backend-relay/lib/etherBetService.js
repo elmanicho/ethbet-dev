@@ -160,25 +160,35 @@ async function cancelBet(etherBetId, user) {
     }
   }
 
-  let results = await ethbetOraclizeService.unlockEthBalance(etherBet.user, etherBet.amount);
-
-  logService.logger.info("Ether Bet Canceled, balance unlocked : ", {
-    tx: results.tx,
-    etherBetId: etherBet.id,
+  logService.logger.info("cancelBet: unlocking balance", {
+    betId: etherBet.id,
     user: etherBet.user,
     amount: etherBet.amount
   });
 
-  let cancelledAt = new Date();
-  await etherBet.update({ cancelledAt });
+  ethbetOraclizeService.unlockEthBalance(etherBet.user, etherBet.amount).then(async (results) => {
+    logService.logger.info("cancelBet: balance unlocked", {
+      tx: results.tx,
+      betId: etherBet.id,
+      user: etherBet.user,
+      amount: etherBet.amount
+    });
 
-  logService.logger.info("Ether Bet Canceled, db updated : ", { etherBetId: etherBet.id, cancelledAt });
+    let cancelledAt = new Date();
+    await etherBet.update({ cancelledAt });
+    logService.logger.info("cancelBet: db updated", { betId: etherBet.id, cancelledAt });
 
-  await lockService.unlock(getEtherBetLockId(etherBetId));
+    await lockService.unlock(getEtherBetLockId(etherBetId));
 
-  socketService.emit("etherBetCanceled", etherBet);
-
-  return etherBet;
+    socketService.emit("etherBetCanceled", etherBet);
+  }).catch((err) => {
+    logService.logger.info("cancelBet: error", {
+      betId: etherBet.id,
+      user: etherBet.user,
+      amount: etherBet.amount,
+      err: err.message
+    });
+  });
 }
 
 async function callBet(betId, callerUser) {

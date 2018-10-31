@@ -153,20 +153,11 @@ function* cancelBet(data) {
   try {
     const web3 = yield select(state => state.web3Store.get("web3"));
 
-    const results = yield call(etherBetService.cancelBet, web3, data.id);
+    yield call(etherBetService.cancelBet, web3, data.id);
 
-    // delay to allow changes to be committed to local node
-    yield delay(1000);
+    yield put(etherBetActions.postCancelBet.success({}));
 
-    yield put(etherBetActions.postCancelBet.success({results}));
-
-    console.log("cancelBet TX", results.tx);
-    yield put(notificationActions.success({
-      notification: {
-        title: 'bet canceled successfully',
-        position: 'br'
-      }
-    }));
+    yield put(notificationActions.successMessage('bet cancellation ongoing, you will be notified when it is complete ...'));
   } catch (error) {
     yield put(etherBetActions.postCancelBet.failure({error}));
     yield put(notificationActions.error({
@@ -179,6 +170,19 @@ function* cancelBet(data) {
     }));
   }
 }
+
+function* notifyBetCanceled(data) {
+  const web3 = yield select(state => state.web3Store.get("web3"));
+  const bet = data.bet;
+
+  // notify if creator
+  if (_.get(web3, 'eth.defaultAccount') === bet.user) {
+    console.log("betCanceled ID:", bet.id);
+    yield put(notificationActions.successMessage(`bet canceled. ID: ${bet.id}`));
+  }
+}
+
+
 
 
 function* callBet(data) {
@@ -249,6 +253,11 @@ function* watchCancelBet() {
   yield takeEvery(etherBetActions.CANCEL_BET, cancelBet);
 }
 
+function* watchBetCanceled() {
+  yield takeEvery(etherBetActions.BET_CANCELED, notifyBetCanceled);
+  yield takeEvery(etherBetActions.BET_CANCELED, getUserActiveBetsCount);
+}
+
 function* watchCallBet() {
   yield takeEvery(etherBetActions.CALL_BET, callBet);
 }
@@ -268,6 +277,7 @@ export default function* betSaga() {
     watchGetBetInfo(),
     watchGetPendingBets(),
     watchCancelBet(),
+    watchBetCanceled(),
     watchCallBet(),
   ]);
 }
