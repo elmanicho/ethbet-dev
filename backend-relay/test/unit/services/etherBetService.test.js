@@ -980,12 +980,6 @@ describe('etherBetService', function etherBetServiceTest() {
               before(async function beforeTest() {
                 etherBet = await db.EtherBet.create(etherBetData);
 
-                emitStub = sinon.stub(socketService, "emit");
-                emitStub.callsFake(function (event, data) {
-                  expect(event).to.eq("etherBetCalled");
-                  expect(data.id).to.eq(etherBet.id);
-                });
-
                 initBetStub = sinon.stub(ethbetOraclizeService, "initBet");
                 initBetStub.callsFake(function (myBetId, myMaker, myCaller, myAmount, myRollUnder) {
                   expect(myBetId).to.eq(etherBet.id);
@@ -1012,20 +1006,26 @@ describe('etherBetService', function etherBetServiceTest() {
                 });
               });
 
-              it('ok', async function it() {
-                let results = await etherBetService.callBet(etherBet.id, callerUser);
+              it('ok',  function it(done) {
+                // check results in the socket callback
+                emitStub = sinon.stub(socketService, "emit");
+                emitStub.callsFake(function (event, data) {
+                  expect(event).to.equal("etherBetCalled");
 
-                expect(results).to.deep.equal({
-                  tx: txResults.tx,
+                  let etherBet = data;
+
+                  db.EtherBet.findById(etherBet.id).then((updatedBet) => {
+                    expect(!!updatedBet.initializedAt).to.equal(true);
+                    expect(updatedBet.callerUser).to.equal(callerUser);
+                    expect(updatedBet.queryId).to.equal(queryId);
+
+                    expect(emitStub.callCount).to.equal(1);
+                    expect(initBetStub.callCount).to.equal(1);
+                    done();
+                  }).catch(done);
                 });
 
-                let updatedBet = await db.EtherBet.findById(etherBet.id);
-                expect(!!updatedBet.initializedAt).to.equal(true);
-                expect(updatedBet.callerUser).to.equal(callerUser);
-                expect(updatedBet.queryId).to.equal(queryId);
-
-                expect(emitStub.callCount).to.equal(1);
-                expect(initBetStub.callCount).to.equal(1);
+                etherBetService.callBet(etherBet.id, callerUser);
               });
 
               after(function afterTest() {
@@ -1034,7 +1034,6 @@ describe('etherBetService', function etherBetServiceTest() {
                 watchBetExecutionEventStub.restore();
                 checkBetExecutionStub.restore();
               });
-
             });
 
             after(function afterTest() {

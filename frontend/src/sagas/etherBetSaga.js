@@ -1,5 +1,4 @@
 import {call, put, all, takeEvery, select} from 'redux-saga/effects';
-import {delay} from 'redux-saga'
 
 import _ from 'lodash';
 
@@ -182,29 +181,16 @@ function* notifyBetCanceled(data) {
   }
 }
 
-
-
-
 function* callBet(data) {
   yield put(etherBetActions.postCallBet.request({betId: data.id}));
   try {
     const web3 = yield select(state => state.web3Store.get("web3"));
 
-    const results = yield call(etherBetService.callBet, web3, data.id);
+    yield call(etherBetService.callBet, web3, data.id);
 
-    // delay to allow changes to be committed to local node
-    yield delay(1000);
+    yield put(etherBetActions.postCallBet.success({}));
 
-    yield put(etherBetActions.postCallBet.success({results}));
-
-    console.log("callBet TX", results.data.tx);
-    yield put(notificationActions.success({
-      notification: {
-        title: 'Bet Initialized',
-        message: "The bet was initialized and should be executed in the next few minutes ...",
-        position: 'br'
-      }
-    }));
+    yield put(notificationActions.successMessage('bet call ongoing, you will be notified when it is complete ...'));
   } catch (error) {
     yield put(etherBetActions.postCallBet.failure({error}));
     yield put(notificationActions.error({
@@ -218,6 +204,28 @@ function* callBet(data) {
   }
 }
 
+function* notifyBetCalled(data) {
+  const web3 = yield select(state => state.web3Store.get("web3"));
+  const bet = data.bet;
+
+  // notify if creator
+  if (_.get(web3, 'eth.defaultAccount') === bet.callerUser) {
+    console.log("betCalled ID:", bet.id);
+    yield put(notificationActions.successMessage(`Bet ID: ${bet.id}. The bet was initialized and should be executed in the next few minutes ...`));
+  }
+}
+
+function* notifyBetExecuted(data) {
+  const web3 = yield select(state => state.web3Store.get("web3"));
+  const bet = data.bet;
+
+  // notify if creator
+  if (_.get(web3, 'eth.defaultAccount') === bet.callerUser) {
+    console.log("betExecuted ID:", bet.id);
+    let rollUnder = 50 + bet.edge / 2;
+    yield put(notificationActions.successMessage(`Bet ID: ${bet.id}. You rolled a ${Math.round(bet.roll * 100) / 100} (needed ${_.round(rollUnder, 4)}) and ${bet.makerWon ? 'lost' : 'won'} ${bet.amount } ETH!`));
+  }
+}
 
 function* watchSaveNewBet() {
   yield takeEvery(etherBetActions.SAVE_NEW_BET, saveNewBet);
@@ -262,6 +270,16 @@ function* watchCallBet() {
   yield takeEvery(etherBetActions.CALL_BET, callBet);
 }
 
+function* watchBetCalled() {
+  yield takeEvery(etherBetActions.BET_CALLED, notifyBetCalled);
+  yield takeEvery(etherBetActions.BET_CALLED, getUserActiveBetsCount);
+}
+
+function* watchBetExecuted() {
+  yield takeEvery(etherBetActions.BET_EXECUTED, notifyBetExecuted);
+  yield takeEvery(etherBetActions.BET_EXECUTED, getUserActiveBetsCount);
+}
+
 function* watchEtherLoadInitialData() {
   yield takeEvery(web3Actions.ETHER_LOAD_INITIAL_DATA, loadInitialData);
 }
@@ -279,5 +297,7 @@ export default function* betSaga() {
     watchCancelBet(),
     watchBetCanceled(),
     watchCallBet(),
+    watchBetCalled(),
+    watchBetExecuted(),
   ]);
 }

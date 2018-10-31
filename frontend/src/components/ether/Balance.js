@@ -4,7 +4,6 @@ import {bindActionCreators} from 'redux';
 import {connect} from 'react-redux'
 
 import Loader from 'react-loader';
-import _ from 'lodash';
 
 import * as notificationActions from '../../actions/notificationActions';
 import * as etherBalanceActions from '../../actions/etherBalanceActions';

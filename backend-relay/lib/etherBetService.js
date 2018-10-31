@@ -239,53 +239,57 @@ async function callBet(betId, callerUser) {
     }
   }
 
+  logService.logger.info("callBet, calling initBet :", {
+    betId: etherBet.id,
+    callerUser: callerUser,
+    amount: etherBet.amount
+  });
+
+
   let rollUnder = 50 + etherBet.edge / 2;
 
-  let txResults;
-  try {
-    txResults = await ethbetOraclizeService.initBet(etherBet.id, etherBet.user, callerUser, etherBet.amount, rollUnder);
-  }
-  catch (err) {
-    lockService.unlock(getEtherBetLockId(etherBet.id));
-    throw(err);
-  }
 
-  let log = txResults.logs[1];
-  let loggedQueryId = log.args.queryId;
+  ethbetOraclizeService.initBet(etherBet.id, etherBet.user, callerUser, etherBet.amount, rollUnder).then(async (txResults) => {
+    let log = txResults.logs[1];
+    let loggedQueryId = log.args.queryId;
 
-  logService.logger.info("Ether Bet Called, contract updated : ", {
-    tx: txResults.tx,
-    betId: etherBet.id,
-    makerUser: etherBet.user,
-    callerUser,
-    amount: etherBet.amount,
-    rollUnder,
-    oraclizeQueryId: loggedQueryId
+    logService.logger.info("callBet, initBet executed : ", {
+      tx: txResults.tx,
+      betId: etherBet.id,
+      makerUser: etherBet.user,
+      callerUser,
+      amount: etherBet.amount,
+      rollUnder,
+      oraclizeQueryId: loggedQueryId
+    });
+
+    let dbUpdateAttrs = {
+      initializedAt: new Date(),
+      callerUser: callerUser,
+      queryId: loggedQueryId
+    };
+    await etherBet.update(dbUpdateAttrs);
+    logService.logger.info("callBet, db updated : ", Object.assign({}, etherBet.toJSON(), dbUpdateAttrs));
+
+    await lockService.unlock(getEtherBetLockId(etherBet.id));
+
+    etherBet.dataValues.username = await userService.getUsername(etherBet.user);
+    etherBet.dataValues.callerUsername = await userService.getUsername(etherBet.callerUser);
+    socketService.emit("etherBetCalled", etherBet);
+
+    // watch bet execution in background
+    ethbetOraclizeService.watchBetExecutionEvent(etherBet.id).then(() => {
+      // update db upon execution
+      this.checkBetExecution(etherBet.id);
+    });
+  }).catch((err) => {
+    logService.logger.info("callBet: error", {
+      betId: etherBet.id,
+      user: etherBet.user,
+      amount: etherBet.amount,
+      err: err.message
+    });
   });
-
-  let dbUpdateAttrs = {
-    initializedAt: new Date(),
-    callerUser: callerUser,
-    queryId: loggedQueryId
-  };
-  await etherBet.update(dbUpdateAttrs);
-  logService.logger.info("Ether Bet Called, db updated : ", Object.assign({}, etherBet.toJSON(), dbUpdateAttrs));
-
-  await lockService.unlock(getEtherBetLockId(etherBet.id));
-
-  etherBet.dataValues.username = await userService.getUsername(etherBet.user);
-  etherBet.dataValues.callerUsername = await userService.getUsername(etherBet.callerUser);
-  socketService.emit("etherBetCalled", etherBet);
-
-  // watch bet execution in background
-  ethbetOraclizeService.watchBetExecutionEvent(etherBet.id).then(() => {
-    // update db upon execution
-    this.checkBetExecution(etherBet.id);
-  });
-
-  return {
-    tx: txResults.tx,
-  };
 }
 
 async function checkBetExecution(betId) {
