@@ -224,8 +224,9 @@ async function callBet(betId, callerUser, gasPriceType) {
   }
 
   let callerEtherBalance = await ethbetOraclizeService.ethBalanceOf(callerUser);
-  if (callerEtherBalance < etherBet.amount) {
-    throw new Error("Insufficient ETH Balance for bet");
+  let callFee = await ethbetOraclizeService.callFee(gasPriceType) / (10 ** 18);
+  if (callerEtherBalance < etherBet.amount + callFee) {
+    throw new Error("Insufficient ETH Balance for bet + fees. fees currently estimated at: " + (callFee) + " ETH");
   }
 
   let callerEbetBalance = await ethbetOraclizeService.balanceOf(callerUser);
@@ -237,13 +238,6 @@ async function callBet(betId, callerUser, gasPriceType) {
   if (makerLockedEthBalance < etherBet.amount) {
     throw new Error("Maker user Locked ETH Balance is less than bet amount");
   }
-
-  let callFee = await ethbetOraclizeService.callFee(gasPriceType) / (10 ** 18);
-  let userEthBalance = await ethbetOraclizeService.ethBalanceOf(callerUser);
-  if (userEthBalance < callFee) {
-    throw new Error("Insufficient ETH Balance for fees, currently estimated at: " + (callFee) + " ETH");
-  }
-
 
   try {
     await lockService.lock(getEtherBetLockId(etherBet.id));
