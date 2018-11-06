@@ -13,15 +13,17 @@ const EtherBetFactory = require('../../factories/etherBets').EtherBetFactory;
 describe('etherBetService', function etherBetServiceTest() {
 
   describe('createBet', function () {
-    let emitStub, balanceOfStub, ethBalanceOfStub, chargeFeeAndLockEthBalanceStub;
+    let emitStub, balanceOfStub, ethBalanceOfStub, chargeFeeAndLockEthBalanceStub, createFeeStub;
     let etherBetData = {
       amount: 1.03,
       edge: 1.55,
       user: testAddress.public,
+      gasPriceType: "low",
     };
 
     context('sufficient balance', function context() {
       let results = { stub: 'results' };
+      let createFee = 0.01 * 10 ** 18;
 
       before(function beforeTest() {
         ethBalanceOfStub = sinon.stub(ethbetOraclizeService, "ethBalanceOf");
@@ -39,11 +41,19 @@ describe('etherBetService', function etherBetServiceTest() {
         });
 
         chargeFeeAndLockEthBalanceStub = sinon.stub(ethbetOraclizeService, "chargeFeeAndLockEthBalance");
-        chargeFeeAndLockEthBalanceStub.callsFake(function (userAddress, amount) {
+        chargeFeeAndLockEthBalanceStub.callsFake(function (userAddress, amount, gasPriceType) {
           expect(userAddress).to.eq(testAddress.public);
           expect(amount).to.eq(etherBetData.amount);
+          expect(gasPriceType).to.eq(etherBetData.gasPriceType);
 
           return Promise.resolve(results);
+        });
+
+        createFeeStub = sinon.stub(ethbetOraclizeService, "createFee");
+        createFeeStub.callsFake(function (myGasPriceType) {
+          expect(myGasPriceType).to.eq(etherBetData.gasPriceType);
+
+          return Promise.resolve(createFee);
         });
       });
 
@@ -74,53 +84,13 @@ describe('etherBetService', function etherBetServiceTest() {
         balanceOfStub.restore();
         ethBalanceOfStub.restore();
         chargeFeeAndLockEthBalanceStub.restore();
-      });
-    });
-
-    context('insufficient ETH balance', function context() {
-      before(function beforeTest() {
-        emitStub = sinon.stub(socketService, "emit");
-
-        ethBalanceOfStub = sinon.stub(ethbetOraclizeService, "ethBalanceOf");
-        ethBalanceOfStub.callsFake(function (userAddress) {
-          expect(userAddress).to.eq(testAddress.public);
-
-          return Promise.resolve(0.6);
-        });
-      });
-
-      it('fails', async function it() {
-        try {
-          await etherBetService.createBet(etherBetData);
-
-          throw new Error("Bet Creation should have failed");
-        }
-        catch (err) {
-          expect(err.message).to.eq('Insufficient ETH Balance for bet')
-        }
-
-        expect(emitStub.callCount).to.equal(0);
-
-        let bets = await db.EtherBet.findAll({});
-        expect(bets.length).to.eq(0);
-      });
-
-      after(function afterTest() {
-        emitStub.restore();
-        ethBalanceOfStub.restore();
+        createFeeStub.restore();
       });
     });
 
     context('insufficient EBET balance', function context() {
       before(function beforeTest() {
         emitStub = sinon.stub(socketService, "emit");
-
-        ethBalanceOfStub = sinon.stub(ethbetOraclizeService, "ethBalanceOf");
-        ethBalanceOfStub.callsFake(function (userAddress) {
-          expect(userAddress).to.eq(testAddress.public);
-
-          return Promise.resolve(2.5);
-        });
 
         balanceOfStub = sinon.stub(ethbetOraclizeService, "balanceOf");
         balanceOfStub.callsFake(function (userAddress) {
@@ -148,8 +118,59 @@ describe('etherBetService', function etherBetServiceTest() {
 
       after(function afterTest() {
         emitStub.restore();
-        ethBalanceOfStub.restore();
         balanceOfStub.restore();
+      });
+    });
+
+    context('insufficient ETH balance', function context() {
+      let createFee = 0.01 * 10 ** 18;
+
+      before(function beforeTest() {
+        emitStub = sinon.stub(socketService, "emit");
+
+        balanceOfStub = sinon.stub(ethbetOraclizeService, "balanceOf");
+        balanceOfStub.callsFake(function (userAddress) {
+          expect(userAddress).to.eq(testAddress.public);
+
+          return Promise.resolve(500);
+        });
+
+        ethBalanceOfStub = sinon.stub(ethbetOraclizeService, "ethBalanceOf");
+        ethBalanceOfStub.callsFake(function (userAddress) {
+          expect(userAddress).to.eq(testAddress.public);
+
+          return Promise.resolve(0.6);
+        });
+
+        createFeeStub = sinon.stub(ethbetOraclizeService, "createFee");
+        createFeeStub.callsFake(function (myGasPriceType) {
+          expect(myGasPriceType).to.eq(etherBetData.gasPriceType);
+
+          return Promise.resolve(createFee);
+        });
+      });
+
+      it('fails', async function it() {
+        try {
+          await etherBetService.createBet(etherBetData);
+
+          throw new Error("Bet Creation should have failed");
+        }
+        catch (err) {
+          expect(err.message).to.eq('Insufficient ETH Balance for bet + fees, fees currently estimated at: 0.01 ETH')
+        }
+
+        expect(emitStub.callCount).to.equal(0);
+
+        let bets = await db.EtherBet.findAll({});
+        expect(bets.length).to.eq(0);
+      });
+
+      after(function afterTest() {
+        emitStub.restore();
+        balanceOfStub.restore();
+        ethBalanceOfStub.restore();
+        createFeeStub.restore();
       });
     });
   });
@@ -358,7 +379,9 @@ describe('etherBetService', function etherBetServiceTest() {
       edge: 1.5,
       user: testAddress.public,
     };
+    let gasPriceType = "low";
     let etherBet;
+    let cancelFee = 50000000;
 
     context('insufficient locked eth balance', function context() {
       before(async function beforeTest() {
@@ -377,7 +400,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.cancelBet(etherBet.id, testAddress.public);
+          await etherBetService.cancelBet(etherBet.id, testAddress.public, gasPriceType);
 
           throw new Error("Bet Creation should have failed");
         }
@@ -409,7 +432,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.cancelBet(etherBet.id + 100, testAddress.public);
+          await etherBetService.cancelBet(etherBet.id + 100, testAddress.public, gasPriceType);
 
           throw new Error("Ether Bet Creation should have failed");
         }
@@ -440,7 +463,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.cancelBet(etherBet.id, testAddress.public);
+          await etherBetService.cancelBet(etherBet.id, testAddress.public, gasPriceType);
 
           throw new Error("Ether Bet Creation should have failed");
         }
@@ -471,7 +494,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.cancelBet(etherBet.id, testAddress.public);
+          await etherBetService.cancelBet(etherBet.id, testAddress.public, gasPriceType);
 
           throw new Error("Ether Bet Creation should have failed");
         }
@@ -502,7 +525,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.cancelBet(etherBet.id, testAddress.public);
+          await etherBetService.cancelBet(etherBet.id, testAddress.public, gasPriceType);
 
           throw new Error("Ether Bet Creation should have failed");
         }
@@ -533,7 +556,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.cancelBet(etherBet.id, testAddress.public);
+          await etherBetService.cancelBet(etherBet.id, testAddress.public, gasPriceType);
 
           throw new Error("Ether Bet Creation should have failed");
         }
@@ -573,6 +596,20 @@ describe('etherBetService', function etherBetServiceTest() {
           return Promise.resolve(results);
         });
 
+        ethBalanceOfStub = sinon.stub(ethbetOraclizeService, "ethBalanceOf");
+        ethBalanceOfStub.callsFake(function (userAddress) {
+          expect(userAddress).to.eq(testAddress.public);
+
+          return Promise.resolve(1 + cancelFee / 10 ** 18);
+        });
+
+        cancelFeeStub = sinon.stub(ethbetOraclizeService, "cancelFee");
+        cancelFeeStub.callsFake(function (myGasPriceType) {
+          expect(myGasPriceType).to.eq(gasPriceType);
+
+          return Promise.resolve(cancelFee);
+        });
+
         etherBet = await db.EtherBet.create(etherBetData);
       });
 
@@ -593,13 +630,15 @@ describe('etherBetService', function etherBetServiceTest() {
           }).catch(done);
         });
 
-        etherBetService.cancelBet(etherBet.id, testAddress.public);
+        etherBetService.cancelBet(etherBet.id, testAddress.public, gasPriceType);
       });
 
       after(function afterTest() {
         emitStub.restore();
         lockedEthBalanceOfStub.restore();
         unlockEthBalanceStub.restore();
+        ethBalanceOfStub.restore();
+        cancelFeeStub.restore();
       });
     });
   });
@@ -613,6 +652,7 @@ describe('etherBetService', function etherBetServiceTest() {
       edge: 1.5,
       user: testAddress.public,
     };
+    let gasPriceType = "low";
     let etherBet;
 
     context('bet does not exist', function context() {
@@ -625,7 +665,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.callBet(etherBet.id + 100, callerUser);
+          await etherBetService.callBet(etherBet.id + 100, callerUser,gasPriceType);
 
           throw new Error("Bet Creation should have failed");
         }
@@ -656,7 +696,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.callBet(etherBet.id, callerUser);
+          await etherBetService.callBet(etherBet.id, callerUser,gasPriceType);
 
           throw new Error("Bet Creation should have failed");
         }
@@ -688,7 +728,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.callBet(etherBet.id, callerUser);
+          await etherBetService.callBet(etherBet.id, callerUser,gasPriceType);
 
           throw new Error("Bet Creation should have failed");
         }
@@ -720,7 +760,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.callBet(etherBet.id, callerUser);
+          await etherBetService.callBet(etherBet.id, callerUser,gasPriceType);
 
           throw new Error("Bet Creation should have failed");
         }
@@ -751,7 +791,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.callBet(etherBet.id, etherBetData.user);
+          await etherBetService.callBet(etherBet.id, etherBetData.user,gasPriceType);
 
           throw new Error("Bet Creation should have failed");
         }
@@ -789,7 +829,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
       it('fails', async function it() {
         try {
-          await etherBetService.callBet(etherBet.id, callerUser);
+          await etherBetService.callBet(etherBet.id, callerUser,gasPriceType);
 
           throw new Error("Bet Creation should have failed");
         }
@@ -838,7 +878,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
         it('fails', async function it() {
           try {
-            await etherBetService.callBet(etherBet.id, callerUser);
+            await etherBetService.callBet(etherBet.id, callerUser,gasPriceType);
 
             throw new Error("Bet Creation should have failed");
           }
@@ -887,7 +927,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
           it('fails', async function it() {
             try {
-              await etherBetService.callBet(etherBet.id, callerUser);
+              await etherBetService.callBet(etherBet.id, callerUser,gasPriceType);
 
               throw new Error("Bet Creation should have failed");
             }
@@ -935,7 +975,7 @@ describe('etherBetService', function etherBetServiceTest() {
 
             it('fails', async function it() {
               try {
-                await etherBetService.callBet(etherBet.id, callerUser);
+                await etherBetService.callBet(etherBet.id, callerUser,gasPriceType);
 
                 throw new Error("Bet Creation should have failed");
               }
@@ -976,6 +1016,8 @@ describe('etherBetService', function etherBetServiceTest() {
                   }
                 }]
               };
+              let callFee = 8000000000;
+              let callFeeStub;
 
               before(async function beforeTest() {
                 etherBet = await db.EtherBet.create(etherBetData);
@@ -1004,9 +1046,16 @@ describe('etherBetService', function etherBetServiceTest() {
 
                   return Promise.resolve();
                 });
+
+                callFeeStub = sinon.stub(ethbetOraclizeService, "callFee");
+                callFeeStub.callsFake(function (myGasPriceType) {
+                  expect(myGasPriceType).to.eq(gasPriceType);
+
+                  return Promise.resolve(callFee);
+                });
               });
 
-              it('ok',  function it(done) {
+              it('ok', function it(done) {
                 // check results in the socket callback
                 emitStub = sinon.stub(socketService, "emit");
                 emitStub.callsFake(function (event, data) {
@@ -1025,7 +1074,7 @@ describe('etherBetService', function etherBetServiceTest() {
                   }).catch(done);
                 });
 
-                etherBetService.callBet(etherBet.id, callerUser);
+                etherBetService.callBet(etherBet.id, callerUser, gasPriceType);
               });
 
               after(function afterTest() {
@@ -1033,6 +1082,7 @@ describe('etherBetService', function etherBetServiceTest() {
                 initBetStub.restore();
                 watchBetExecutionEventStub.restore();
                 checkBetExecutionStub.restore();
+                callFeeStub.restore();
               });
             });
 

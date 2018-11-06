@@ -211,14 +211,16 @@ describe('etherBetsApi', function etherBetsApiTest() {
     let cancelBetStub;
     let data = {
       id: 36,
+      gasPriceType: "low"
     };
     let message;
 
     before(function beforeTest() {
       cancelBetStub = sinon.stub(etherBetService, "cancelBet");
-      cancelBetStub.callsFake(function (betId, myAddress) {
+      cancelBetStub.callsFake(function (betId, myAddress,myGasPriceType) {
         expect(betId).to.eq(data.id);
         expect(myAddress).to.eq(testAddress.public);
+        expect(myGasPriceType).to.eq(data.gasPriceType);
 
         return Promise.resolve();
       });
@@ -249,15 +251,17 @@ describe('etherBetsApi', function etherBetsApiTest() {
     let callBetStub;
     let data = {
       id: 36,
-      seed: "1111222233334444"
+      seed: "1111222233334444",
+      gasPriceType: "low",
     };
     let message;
 
     before(function beforeTest() {
       callBetStub = sinon.stub(etherBetService, "callBet");
-      callBetStub.callsFake(function (betId, myAddress) {
+      callBetStub.callsFake(function (betId, myAddress,myGasPriceType) {
         expect(betId).to.eq(data.id);
         expect(myAddress).to.eq(testAddress.public);
+        expect(myGasPriceType).to.eq(data.gasPriceType);
 
         return Promise.resolve();
       });

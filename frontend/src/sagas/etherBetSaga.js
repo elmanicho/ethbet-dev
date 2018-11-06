@@ -21,15 +21,16 @@ function* saveNewBet(data) {
   yield put(etherBetActions.postSaveNewBet.request());
   try {
     const web3 = yield select(state => state.web3Store.get("web3"));
+    const gasPriceType = yield select(state => state.web3Store.get("gasPriceType"));
     const newBet = yield select(state => state.etherBetStore.get("newBet"));
 
-    yield call(etherBetService.makeBet, web3, newBet);
+    yield call(etherBetService.makeBet, web3, gasPriceType, newBet);
 
     yield put(etherBetActions.postSaveNewBet.success({}));
 
     yield put(notificationActions.successMessage('bet creation ongoing, you will be notified when it is complete ...'));
   } catch (error) {
-    yield put(etherBetActions.postSaveNewBet.failure({error}));
+    yield put(etherBetActions.postSaveNewBet.failure({ error }));
     yield put(notificationActions.error({
       notification: {
         title: 'failed to save bet',
@@ -65,7 +66,7 @@ function* getActiveBets(data) {
       loadMore: loadMore
     }));
   } catch (error) {
-    yield put(etherBetActions.fetchGetActiveBets.failure({error}));
+    yield put(etherBetActions.fetchGetActiveBets.failure({ error }));
     yield put(notificationActions.error({
       notification: {
         title: 'failed to get active bets',
@@ -100,9 +101,9 @@ function* getExecutedBets(data) {
   yield put(etherBetActions.fetchGetExecutedBets.request());
   try {
     const executedBets = yield call(etherBetService.getExecutedBets);
-    yield put(etherBetActions.fetchGetExecutedBets.success({executedBets}));
+    yield put(etherBetActions.fetchGetExecutedBets.success({ executedBets }));
   } catch (error) {
-    yield put(etherBetActions.fetchGetExecutedBets.failure({error}));
+    yield put(etherBetActions.fetchGetExecutedBets.failure({ error }));
     yield put(notificationActions.error({
       notification: {
         title: 'failed to get executed bets',
@@ -134,9 +135,9 @@ function* getPendingBets(data) {
   yield put(etherBetActions.fetchGetPendingBets.request());
   try {
     const pendingBets = yield call(etherBetService.getPendingBets);
-    yield put(etherBetActions.fetchGetPendingBets.success({pendingBets}));
+    yield put(etherBetActions.fetchGetPendingBets.success({ pendingBets }));
   } catch (error) {
-    yield put(etherBetActions.fetchGetPendingBets.failure({error}));
+    yield put(etherBetActions.fetchGetPendingBets.failure({ error }));
     yield put(notificationActions.error({
       notification: {
         title: 'failed to get pending bets',
@@ -148,17 +149,18 @@ function* getPendingBets(data) {
 }
 
 function* cancelBet(data) {
-  yield put(etherBetActions.postCancelBet.request({betId: data.id}));
+  yield put(etherBetActions.postCancelBet.request({ betId: data.id }));
   try {
     const web3 = yield select(state => state.web3Store.get("web3"));
+    const gasPriceType = yield select(state => state.web3Store.get("gasPriceType"));
 
-    yield call(etherBetService.cancelBet, web3, data.id);
+    yield call(etherBetService.cancelBet, web3, gasPriceType, data.id);
 
     yield put(etherBetActions.postCancelBet.success({}));
 
     yield put(notificationActions.successMessage('bet cancellation ongoing, you will be notified when it is complete ...'));
   } catch (error) {
-    yield put(etherBetActions.postCancelBet.failure({error}));
+    yield put(etherBetActions.postCancelBet.failure({ error }));
     yield put(notificationActions.error({
       notification: {
         title: 'failed to cancel bet',
@@ -182,17 +184,18 @@ function* notifyBetCanceled(data) {
 }
 
 function* callBet(data) {
-  yield put(etherBetActions.postCallBet.request({betId: data.id}));
+  yield put(etherBetActions.postCallBet.request({ betId: data.id }));
   try {
     const web3 = yield select(state => state.web3Store.get("web3"));
+    const gasPriceType = yield select(state => state.web3Store.get("gasPriceType"));
 
-    yield call(etherBetService.callBet, web3, data.id);
+    yield call(etherBetService.callBet, web3, gasPriceType, data.id);
 
     yield put(etherBetActions.postCallBet.success({}));
 
     yield put(notificationActions.successMessage('bet call ongoing, you will be notified when it is complete ...'));
   } catch (error) {
-    yield put(etherBetActions.postCallBet.failure({error}));
+    yield put(etherBetActions.postCallBet.failure({ error }));
     yield put(notificationActions.error({
       notification: {
         title: 'failed to call bet',

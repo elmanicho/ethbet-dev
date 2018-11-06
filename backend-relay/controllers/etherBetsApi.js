@@ -81,8 +81,9 @@ module.exports = {
   cancelBet: async function cancelBet(req, res) {
     try {
       let id = req.objectData.id;
+      let gasPriceType = req.objectData.gasPriceType;
 
-      await etherBetService.cancelBet(id, req.body.address);
+      await etherBetService.cancelBet(id, req.body.address,gasPriceType);
 
       res.status(200).json({});
     }
@@ -94,8 +95,9 @@ module.exports = {
   callBet: async function callBet(req, res) {
     try {
       let id = req.objectData.id;
+      let gasPriceType = req.objectData.gasPriceType;
 
-      await etherBetService.callBet(id, req.body.address);
+      await etherBetService.callBet(id, req.body.address,gasPriceType);
 
       res.status(200).json({});
     }

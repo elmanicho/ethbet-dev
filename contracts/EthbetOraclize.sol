@@ -215,10 +215,16 @@ contract EthbetOraclize is Ownable, usingOraclize {
   * @dev charge fee and lock eth balance
   * @param _userAddress User Address
   * @param _amount Amount to be locked in wei
+  * @param _fee Fee in wei to be charged
   */
-  function chargeFeeAndLockEthBalance(address _userAddress, uint _amount) public isRelay {
-    // charge fee
+  function chargeFeeAndLockEthBalance(address _userAddress, uint _amount, uint _fee) public isRelay {
+    // charge EBET fee
     chargeFee(_userAddress);
+
+    if (_fee > 0) {
+      // charge gas fee
+      chargeGasFee(_userAddress, _fee);
+    }
 
     // lock balance
     lockEthBalance(_userAddress, _amount);
@@ -234,6 +240,22 @@ contract EthbetOraclize is Ownable, usingOraclize {
     // charge fee
     balances[_userAddress] = balances[_userAddress].sub(ebetFee);
     balances[owner] = balances[owner].add(ebetFee);
+  }
+
+
+  /**
+   * @dev charge gas fee
+   * @param _userAddress User Address
+   * @param _fee Fee in wei to be charged
+   */
+  function chargeGasFee(address _userAddress, uint _fee) internal isRelay {
+    require(ethBalances[_userAddress] >= _fee);
+
+    // charge fee
+    ethBalances[_userAddress] = ethBalances[_userAddress].sub(_fee);
+
+    // transfer ether from the contract to the relay
+    relay.transfer(_fee);
   }
 
   /**
@@ -258,8 +280,9 @@ contract EthbetOraclize is Ownable, usingOraclize {
    * @dev Unlock user eth balance
    * @param _userAddress User Address
    * @param _amount Amount to be locked in wei
+   * @param _fee Fee in wei to be charged
    */
-  function unlockEthBalance(address _userAddress, uint _amount) public isRelay {
+  function unlockEthBalance(address _userAddress, uint _amount, uint _fee) public isRelay {
     require(_amount > 0);
     require(lockedEthBalances[_userAddress] >= _amount);
 
@@ -268,6 +291,11 @@ contract EthbetOraclize is Ownable, usingOraclize {
 
     // add the tokens to the user's  balance
     ethBalances[_userAddress] = ethBalances[_userAddress].add(_amount);
+
+    if (_fee > 0) {
+      // charge fees
+      chargeGasFee(_userAddress, _fee);
+    }
 
     UnlockedEthBalance(_userAddress, _amount);
   }
@@ -280,7 +308,7 @@ contract EthbetOraclize is Ownable, usingOraclize {
   * @param _amount amount in Wei
   * @param _rollUnder roll under (2 decimals)
   */
-  function initBet(uint _betId, address _maker, address _caller, uint _amount, uint _rollUnder) payable isRelay public {
+  function initBet(uint _betId, address _maker, address _caller, uint _amount, uint _rollUnder, uint _fee) payable isRelay public {
     require(_betId > 0);
     require(!isBetInitialized(_betId));
     require(_maker != address(0));
@@ -290,7 +318,7 @@ contract EthbetOraclize is Ownable, usingOraclize {
     require(_rollUnder > 0 && _rollUnder < 10000);
 
     // lock the bet amount for the caller
-    chargeFeeAndLockEthBalance(_caller, _amount);
+    chargeFeeAndLockEthBalance(_caller, _amount, _fee);
 
     // check locked eth balances are sufficient
     require(lockedEthBalances[_maker] >= _amount);

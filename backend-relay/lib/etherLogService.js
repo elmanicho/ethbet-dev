@@ -1,3 +1,4 @@
+const fs = require('fs');
 const winston = require('winston');
 require('winston-daily-rotate-file');
 
@@ -13,9 +14,11 @@ const logger = winston.createLogger({
   ]
 });
 
-
 if (process.env.NODE_ENV === "test") {
   logger.remove(transport);
+  logger.add(new winston.transports.Stream({
+    stream: fs.createWriteStream('/dev/null')
+  }));
 }
 
 module.exports = {

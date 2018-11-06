@@ -22,12 +22,21 @@ describe('ethbetOraclizeService', function ethbetOraclizeServiceTest() {
     }
   };
   let ethbetOraclizeInstance;
-  let getWeb3Stub, getDeployedInstanceStub;
+  let getWeb3Stub, getGasPriceStub, getDeployedInstanceStub;
+  let gasPrice = 20 * 10 ** 9;
+  let gasPriceType = "low";
 
   before(function beforeTest() {
     getWeb3Stub = sinon.stub(web3Service, 'getWeb3');
     getWeb3Stub.callsFake(function () {
       return web3;
+    });
+
+    getGasPriceStub = sinon.stub(web3Service, 'getGasPrice');
+    getGasPriceStub.callsFake(function (myGasPriceType) {
+      expect(myGasPriceType).to.eq(gasPriceType);
+
+      return gasPrice;
     });
 
     ethbetOraclizeInstance = {
@@ -169,16 +178,18 @@ describe('ethbetOraclizeService', function ethbetOraclizeServiceTest() {
 
     before(function beforeTest() {
       chargeFeeAndLockEthBalanceStub = sinon.stub(ethbetOraclizeInstance, 'chargeFeeAndLockEthBalance');
-      chargeFeeAndLockEthBalanceStub.callsFake(function (myUserAddress, myAmount) {
+      chargeFeeAndLockEthBalanceStub.callsFake(function (myUserAddress, myAmount, myFee) {
         expect(myUserAddress).to.eq(userAddress);
         expect(myAmount).to.eq(1.2 * 10 ** 18);
+        expect(myFee).to.eq(ethbetOraclizeService.CREATE_GAS * gasPrice);
+
 
         return Promise.resolve(results);
       });
     });
 
     it('ok', async function it() {
-      let myResults = await ethbetOraclizeService.chargeFeeAndLockEthBalance(userAddress, amount);
+      let myResults = await ethbetOraclizeService.chargeFeeAndLockEthBalance(userAddress, amount, gasPriceType);
 
       expect(myResults).to.equal(results);
     });
@@ -196,16 +207,18 @@ describe('ethbetOraclizeService', function ethbetOraclizeServiceTest() {
 
     before(function beforeTest() {
       unlockEthBalanceStub = sinon.stub(ethbetOraclizeInstance, 'unlockEthBalance');
-      unlockEthBalanceStub.callsFake(function (myUserAddress, myAmount) {
+      unlockEthBalanceStub.callsFake(function (myUserAddress, myAmount, myFee) {
         expect(myUserAddress).to.eq(userAddress);
         expect(myAmount).to.eq(1.2 * 10 ** 18);
+        expect(myFee).to.eq(gasPrice * ethbetOraclizeService.CANCEL_GAS);
+
 
         return Promise.resolve(results);
       });
     });
 
     it('ok', async function it() {
-      let myResults = await ethbetOraclizeService.unlockEthBalance(userAddress, amount);
+      let myResults = await ethbetOraclizeService.unlockEthBalance(userAddress, amount, gasPriceType);
 
       expect(myResults).to.equal(results);
     });
@@ -238,15 +251,16 @@ describe('ethbetOraclizeService', function ethbetOraclizeServiceTest() {
       });
 
       initBetStub = sinon.stub(ethbetOraclizeInstance, 'initBet');
-      initBetStub.callsFake(function (myBetId, myMaker, myCaller, myAmount, myRollUnder, params) {
+      initBetStub.callsFake(function (myBetId, myMaker, myCaller, myAmount, myRollUnder, myFee, params) {
         expect(myBetId).to.eq(betId);
         expect(myMaker).to.eq(maker);
         expect(myCaller).to.eq(caller);
         expect(myAmount).to.eq(1.2 * 10 ** 18);
         expect(myRollUnder).to.eq(5350);
+        expect(myFee).to.eq(2560000000000000 + ethbetOraclizeService.CALL_GAS * gasPrice);
         expect(params).to.deep.eq({
           gas: 400000,
-          gasPrice: 20000000000,
+          gasPrice: gasPrice,
           value: 2560000000000000
         });
 
@@ -255,7 +269,7 @@ describe('ethbetOraclizeService', function ethbetOraclizeServiceTest() {
     });
 
     it('ok', async function it() {
-      let myResults = await ethbetOraclizeService.initBet(betId, maker, caller, amount, rollUnder);
+      let myResults = await ethbetOraclizeService.initBet(betId, maker, caller, amount, rollUnder, gasPriceType);
 
       expect(myResults).to.equal(results);
     });
@@ -265,11 +279,6 @@ describe('ethbetOraclizeService', function ethbetOraclizeServiceTest() {
       oraclizeGasLimitStub.restore();
       initBetStub.restore();
     });
-  });
-
-  after(function afterTest() {
-    getWeb3Stub.restore();
-    getDeployedInstanceStub.restore();
   });
 
   describe('getBetById', function () {
@@ -312,6 +321,12 @@ describe('ethbetOraclizeService', function ethbetOraclizeServiceTest() {
     after(function afterTest() {
       getBetByIdStub.restore();
     });
+  });
+
+  after(function afterTest() {
+    getWeb3Stub.restore();
+    getGasPriceStub.restore();
+    getDeployedInstanceStub.restore();
   });
 
 });

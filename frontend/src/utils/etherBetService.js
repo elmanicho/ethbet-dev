@@ -2,10 +2,11 @@ import {client, apiRoot} from './apiService';
 import web3Service from './web3Service';
 
 
-async function makeBet(web3, newBet) {
+async function makeBet(web3, gasPriceType, newBet) {
   let newBetData = {
     amount: parseFloat(newBet.amount),
     edge: parseFloat(newBet.edge),
+    gasPriceType
   };
 
   let message = await web3Service.sign(web3, newBetData);
@@ -13,9 +14,10 @@ async function makeBet(web3, newBet) {
   return await client.post(apiRoot + '/ether-bets', message);
 }
 
-async function cancelBet(web3, betId) {
+async function cancelBet(web3, gasPriceType, betId) {
   let cancelBetData = {
-    id: betId
+    id: betId,
+    gasPriceType,
   };
 
   let message = await web3Service.sign(web3, cancelBetData);
@@ -23,9 +25,10 @@ async function cancelBet(web3, betId) {
   return await client.post(`${apiRoot}/ether-bets/cancel`, message);
 }
 
-async function callBet(web3, betId) {
+async function callBet(web3,gasPriceType, betId) {
   let callBetData = {
     id: betId,
+    gasPriceType,
   };
 
   let message = await web3Service.sign(web3, callBetData);
