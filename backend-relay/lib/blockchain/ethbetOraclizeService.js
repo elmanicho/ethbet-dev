@@ -3,7 +3,7 @@ const web3Service = require('../web3Service');
 const ethUtil = require('ethereumjs-util');
 
 const CREATE_GAS = 67000;
-const CALL_GAS = 67000 ;
+const CALL_GAS = 330000 ;
 const CANCEL_GAS = 52000;
 
 async function balanceOf(userAddress) {
