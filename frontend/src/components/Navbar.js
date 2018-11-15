@@ -156,7 +156,7 @@ class Navbar extends Component {
                   <span className="caret"></span>
                 </a>
                 <ul className="dropdown-menu account-menu">
-                  <li><a>{web3 ? web3.eth.defaultAccount : null}</a></li>
+                  <li><a href="##">{web3 ? web3.eth.defaultAccount : null}</a></li>
                 </ul>
               </li>
 
