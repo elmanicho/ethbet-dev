@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import {Provider} from 'react-redux';
 import configureStore from './store/configureStore';
 import {Router, Route} from 'react-router-dom'
-import registerServiceWorker from './registerServiceWorker';
+import * as serviceWorker from './serviceWorker';
 
 import './css/bootstrap.min.css';
 import 'font-awesome/css/font-awesome.css';
@@ -32,4 +32,5 @@ ReactDOM.render(
   ,
   document.getElementById('root')
 );
-registerServiceWorker();
+
+serviceWorker.unregister();
